@@ -48,7 +48,16 @@ class ReflexAgent(Agent):
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
 
         "Add more of your code here if you want to"
-
+        
+        '''
+        print "Legal moves: ", legalMoves
+        print "Best score: ", bestScore
+        print "Best indices: ", bestIndices
+        print "Chosen index: ", chosenIndex
+        
+        print legalMoves[chosenIndex], "\n"
+        '''
+        
         return legalMoves[chosenIndex]
 
     def evaluationFunction(self, currentGameState, action):
@@ -67,14 +76,86 @@ class ReflexAgent(Agent):
         to create a masterful evaluation function.
         """
         # Useful information you can extract from a GameState (pacman.py)
+        #########
+        
+        # Returns info about entire game state, including pellets (small dots when printed), 
+        # pacman ('v' when printed, but pointing in direction of travel), ghost ('G' when printed),
+        # and big food ('o' when printed)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
+        # Returns coordinates of pacman's position
         newPos = successorGameState.getPacmanPosition()
+        # Returns a grid of boolean (T/F) food indicator variables
         newFood = successorGameState.getFood()
+        # Returns agentState of all ghosts (agent state looks like it includes position and direction, as well scared timer, and some other things,
+        # shown in game.py)
         newGhostStates = successorGameState.getGhostStates()
+        # Returns array of how long each ghost is scared for. Is 0 when ghost is not scared
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        '''
+        print "Successor game state: ", successorGameState
+        print "New position: ", newPos
+        print "New food: ", newFood
+        print "New ghost states: ", newGhostStates
+        print "New scared times: ", newScaredTimes
+        '''
+        
+        # Real meat and potatoes of my evaluation function
+        #########
+        
+        # If the new position is the same as a ghost position, DO NOT allow the move to be made
+        for ghostState in newGhostStates:
+            '''
+            print "Ghost's position: ", ghostState.getPosition()
+            print "Pacman's position: ", newPos
+            '''
+            if newPos == ghostState.getPosition():
+                return -1
+            # If pacman is 2 manhattan distance from a ghost, don't allow the action
+            if util.manhattanDistance(newPos, ghostState.getPosition()) <= 2:
+                return -1
+            
+                
+        # Get x and y sizes of board
+        wallsList = successorGameState.getWalls().asList()
+        xSize = 0
+        ySize = 0
+        for wall in wallsList:
+            if wall[0] > xSize:
+                xSize = wall[0]
+            if wall[1] > ySize:
+                ySize = wall[1]
+        
+        # Return the reciprocal of the closest food + if the you will grab food
+        # First check if the position we go to is food
+        if newPos in currentGameState.getFood().asList():
+            isFood = 1.0
+        else:
+            isFood = 0.0
+        #Then calculate distance to nearest food
+        closestFoodDist = 1000       #initial distance in case food is not found
+        for x in range(1, xSize):
+            for y in range(1, ySize):
+                if newFood[x][y] == True:
+                    foodPos = []
+                    foodPos.append(x)
+                    foodPos.append(y)
+                    foodDist = util.manhattanDistance(newPos, foodPos)
+                    if foodDist < closestFoodDist:
+                        closestFoodDist = foodDist
+        '''
+        print "closest food: ", closestFoodDist
+        print "reciprocal: ", float(1.0 / closestFoodDist)
+        print "Is the next action food: ", isFood
+        '''
+        return float(1.0 / closestFoodDist) + isFood
+        
+        
+        ''' #THIS DOESN'T WORK
+        # Return the reciprocal of the amount of food left
+        return 1 / newFood.count()
+        '''
 
 def scoreEvaluationFunction(currentGameState):
     """
