@@ -115,19 +115,9 @@ class ReflexAgent(Agent):
             # If pacman is 2 manhattan distance from a ghost, don't allow the action
             if util.manhattanDistance(newPos, ghostState.getPosition()) <= 2:
                 return -1
-            
-                
-        # Get x and y sizes of board
-        wallsList = successorGameState.getWalls().asList()
-        xSize = 0
-        ySize = 0
-        for wall in wallsList:
-            if wall[0] > xSize:
-                xSize = wall[0]
-            if wall[1] > ySize:
-                ySize = wall[1]
         
-        # Return the reciprocal of the closest food + if the you will grab food
+        # Return the reciprocal of the closest food + if the you will grab food,
+        # this way we use next closest food distance (as well as if the position contains food) as our eval function
         # First check if the position we go to is food
         if newPos in currentGameState.getFood().asList():
             isFood = 1.0
@@ -135,15 +125,10 @@ class ReflexAgent(Agent):
             isFood = 0.0
         #Then calculate distance to nearest food
         closestFoodDist = 1000       #initial distance in case food is not found
-        for x in range(1, xSize):
-            for y in range(1, ySize):
-                if newFood[x][y] == True:
-                    foodPos = []
-                    foodPos.append(x)
-                    foodPos.append(y)
-                    foodDist = util.manhattanDistance(newPos, foodPos)
-                    if foodDist < closestFoodDist:
-                        closestFoodDist = foodDist
+        for foodPos in newFood.asList():
+            foodDist = util.manhattanDistance(newPos, foodPos)
+            if foodDist < closestFoodDist:
+                closestFoodDist = foodDist
         '''
         print "closest food: ", closestFoodDist
         print "reciprocal: ", float(1.0 / closestFoodDist)
