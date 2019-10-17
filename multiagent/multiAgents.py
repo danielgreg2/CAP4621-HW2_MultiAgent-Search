@@ -218,17 +218,16 @@ class MinimaxAgent(MultiAgentSearchAgent):
         ###As a note, I am returning [action, scoreTheActionWillEarn] for my functions
         
         def minmaxDecision(state, depth, agentIndex):
+            #print "Current depth: ", depth     #Used for DEBUGGING
             #If we look one past the total # of agents, then it is time to restart the tree and look at pacman's action
             #This means we will have to increase the depth as well
             if agentIndex >= state.getNumAgents():
                 depth = depth + 1
                 agentIndex = 0
+            #print "New depth: ", depth     #Used for DEBUGGING
             
-            #If we have hit the bottom, return the score from the eval function
-            if depth == self.depth:
-                return self.evaluationFunction(gameState)
             #If we are looking at pacman
-            elif agentIndex == 0:
+            if agentIndex == 0:
                 return maxValue(state, depth, agentIndex)
             #If we are looking at any of the ghosts
             else:
@@ -236,10 +235,10 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 
         def maxValue(state, depth, agentIndex):
             moves = state.getLegalActions()
-            print "Max moves: ", moves
-            #First check terminal test, i.e. are there no moves to make
+            #print "Max moves: ", moves     #Used for DEBUGGING
+            #First check terminal test, i.e. are there no moves to make OR we have reached the end depth
             #If we are at the terminal test, we return just the utility value (which is just score) 
-            if len(moves) == 0:
+            if len(moves) == 0 or depth == self.depth:
                 return self.evaluationFunction(state)
                 
             #v will hold our [action, score]
@@ -261,10 +260,10 @@ class MinimaxAgent(MultiAgentSearchAgent):
             
         def minValue(state, depth, agentIndex):
             moves = state.getLegalActions(agentIndex)
-            print "Min moves: ", moves
-            #First check terminal test, i.e. are there no moves to make
+            #print "Min moves: ", moves     #Used for DEBUGGING
+            #First check terminal test, i.e. are there no moves to make OR we have reached the end depth
             #If we are at the terminal test, we return just the utility value (which is just score) 
-            if len(moves) == 0:
+            if len(moves) == 0 or depth == self.depth:
                 return self.evaluationFunction(state)
                 
             #v will hold our [action, score]
@@ -280,14 +279,14 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 else:
                     competingScore = result[1]
                 
-                print "The competing score is: ", competingScore
+                #print "The competing score is: ", competingScore       #Used for DEBUGGING
                 if competingScore < v[1]:
                     v[0] = m
                     v[1] = competingScore
             return v
         
-        actionsList = minmaxDecision(gameState, 0, 0)
-        return actionsList[0]
+        #print "Intial depth: ", self.depth     #Used for DEBUGGING
+        return minmaxDecision(gameState, 0, 0)[0]
         
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
