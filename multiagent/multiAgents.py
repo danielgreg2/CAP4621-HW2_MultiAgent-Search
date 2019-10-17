@@ -298,8 +298,108 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
+        #Algorithm from AI - A Modern Approach, 3rd Edition, pg. 170
+        '''
+        function ALPHA-BETA-SEARCH(state) returns an action
+            v <- MAX-VALUE(state, -infinity, +infinity)
+            return the action in ACTIONS(state) with value v
+        ----------
+        function MAX-VALUE(state, alpha, beta) returns a utility value
+            if TERMINAL-TEST(state) then return UTILITY(state)
+            v <- -infinity
+            for each a in ACTIONS(state) do
+                v <- MAX(v, MIN-VALUE(RESULT(s,a),alpha, beta))
+                if v >= beta then return v
+                alpha <- MAX(alpha, v)
+            return v
+        ----------
+        function MIN-VALUE(state, alpha, beta) returns a utility value
+            if TERMINAL-TEST(state) then return UTILITY(state)
+            v <- +infinity
+            for each a in ACTIONS(state) do
+                v <- MIN(v, MAX-VALUE(RESULT(s,a) ,alpha, beta))
+                if v <= alpha then return v
+                beta <- MIN(beta, v)
+            return v
+        '''
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def alphaBetaSearch(state, depth, agentIndex, alpha, beta):
+            #If we look one past the total # of agents, then it is time to restart the tree and look at pacman's action
+            #This means we will have to increase the depth as well
+            if agentIndex >= state.getNumAgents():
+                depth = depth + 1
+                agentIndex = 0
+            
+            #If we are looking at pacman
+            if agentIndex == 0:
+                return maxValue(state, depth, agentIndex, alpha, beta)
+            #If we are looking at any of the ghosts
+            else:
+                return minValue(state, depth, agentIndex, alpha, beta)
+                
+        def maxValue(state, depth, agentIndex, alpha, beta):
+            moves = state.getLegalActions()
+            #First check terminal test, i.e. are there no moves to make OR we have reached the end depth
+            #If we are at the terminal test, we return just the utility value (which is just score) 
+            if len(moves) == 0 or depth == self.depth:
+                return self.evaluationFunction(state)
+                
+            #v will hold our [action, score]
+            v = ["", -float('inf')]
+            
+            #Then we go through all possible moves and find the max value it can give us
+            for m in moves:
+                result = minValue(state.generateSuccessor(0, m), depth, agentIndex + 1, alpha, beta)
+                #check if result's utility value (i.e. score) is larger than current v (i.e. check for max among all moves)
+                if not isinstance(result, list):        #since we can be given [action, score] or just score, I check first which is being passed in
+                    competingScore = result
+                else:
+                    competingScore = result[1]
+                    
+                if competingScore > v[1]:
+                    v[0] = m
+                    v[1] = competingScore
+                #check if result's utility value (i.e. score) is larger than beta
+                if v[1] > beta:
+                    return v
+                #set alpha to be the maximum value of all moves
+                if alpha < v[1]:
+                    alpha = v[1]
+            return v
+            
+        def minValue(state, depth, agentIndex, alpha, beta):
+            moves = state.getLegalActions(agentIndex)
+            #First check terminal test, i.e. are there no moves to make OR we have reached the end depth
+            #If we are at the terminal test, we return just the utility value (which is just score) 
+            if len(moves) == 0 or depth == self.depth:
+                return self.evaluationFunction(state)
+                
+            #v will hold our [action, score]
+            v = ["", float('inf')]
+            
+            #Then we go through all possible moves and find the min value it can give us
+            for m in moves:
+                #note that I call alphaBetaSearch instead of maxValue b/c I may have to iterate through multiple ghosts
+                result = alphaBetaSearch(state.generateSuccessor(agentIndex, m), depth, agentIndex + 1, alpha, beta)
+                #check if result's utility value (i.e. score) is smaller than current v (i.e. check for min among all moves)
+                if not isinstance(result, list):        #since we can be given [action, score] or just score, I check first which is being passed in
+                    competingScore = result
+                else:
+                    competingScore = result[1]
+                
+                if competingScore < v[1]:
+                    v[0] = m
+                    v[1] = competingScore
+                #check if result's utility value (i.e. score) is smaller than alpha
+                if v[1] < alpha:
+                    return v
+                #set beta to be the minimum value of all moves
+                if beta > v[1]:
+                    beta = v[1]
+            return v
+        
+        # when calling the function for the first time, alpha should be - infinity, beta shuold be + infinity, referenced from: https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-4-alpha-beta-pruning/
+        return alphaBetaSearch(gameState, 0, 0, -float('inf'), float('inf'))[0]
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
