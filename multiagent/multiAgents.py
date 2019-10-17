@@ -194,8 +194,101 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
+        #Wikipedia has pseudocode: https://en.wikipedia.org/wiki/Minimax
+        '''
+        #Algorithm from AI - A Modern Approach, 3rd Edition, pg. 166
+        function MINIMAX-DECISION(state) returns an action
+            return argmax a in ACTIONS(s) MIN-VALUE(RESULT(state, a))
+        --------
+        function MAX-VALUE(state) returns a utility value
+            if TERMINAL-TEST(state) then return UTILITY(state)
+            v <- -infinity
+            for each a in ACTIONS(state) do
+                v <- MAX(v, MIN-VALUE(RESULT(s, a)))
+            return v
+        --------
+        function MIN-VALUE(state) returns a utility value
+            if TERMINAL-TEST(state) then return UTILITY(state)
+            v <- infinity
+            for each a in ACTIONS(state) do
+                v <- MIN(v, MAX-VALUE(RESULT(s, a)))
+            return v
+        '''
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        ###As a note, I am returning [action, scoreTheActionWillEarn] for my functions
+        
+        def minmaxDecision(state, depth, agentIndex):
+            #If we look one past the total # of agents, then it is time to restart the tree and look at pacman's action
+            #This means we will have to increase the depth as well
+            if agentIndex >= state.getNumAgents():
+                depth = depth + 1
+                agentIndex = 0
+            
+            #If we have hit the bottom, return the score from the eval function
+            if depth == self.depth:
+                return self.evaluationFunction(gameState)
+            #If we are looking at pacman
+            elif agentIndex == 0:
+                return maxValue(state, depth, agentIndex)
+            #If we are looking at any of the ghosts
+            else:
+                return minValue(state, depth, agentIndex)
+                
+        def maxValue(state, depth, agentIndex):
+            moves = state.getLegalActions()
+            print "Max moves: ", moves
+            #First check terminal test, i.e. are there no moves to make
+            #If we are at the terminal test, we return just the utility value (which is just score) 
+            if len(moves) == 0:
+                return self.evaluationFunction(state)
+                
+            #v will hold our [action, score]
+            v = ["", -float('inf')]
+            
+            #Then we go through all possible moves and find the max value it can give us
+            for m in moves:
+                result = minValue(state.generateSuccessor(0, m), depth, agentIndex + 1)
+                #check if result's utility value (i.e. score) is larger than current v (i.e. check for max among all moves)
+                if not isinstance(result, list):        #since we can be given [action, score] or just score, I check first which is being passed in
+                    competingScore = result
+                else:
+                    competingScore = result[1]
+                    
+                if competingScore > v[1]:
+                    v[0] = m
+                    v[1] = competingScore
+            return v
+            
+        def minValue(state, depth, agentIndex):
+            moves = state.getLegalActions(agentIndex)
+            print "Min moves: ", moves
+            #First check terminal test, i.e. are there no moves to make
+            #If we are at the terminal test, we return just the utility value (which is just score) 
+            if len(moves) == 0:
+                return self.evaluationFunction(state)
+                
+            #v will hold our [action, score]
+            v = ["", float('inf')]
+            
+            #Then we go through all possible moves and find the min value it can give us
+            for m in moves:
+                #note that I call minmaxDecision instead of maxValue b/c I may have to iterate through multiple ghosts
+                result = minmaxDecision(state.generateSuccessor(agentIndex, m), depth, agentIndex + 1)
+                #check if result's utility value (i.e. score) is smaller than current v (i.e. check for min among all moves)
+                if not isinstance(result, list):        #since we can be given [action, score] or just score, I check first which is being passed in
+                    competingScore = result
+                else:
+                    competingScore = result[1]
+                
+                print "The competing score is: ", competingScore
+                if competingScore < v[1]:
+                    v[0] = m
+                    v[1] = competingScore
+            return v
+        
+        actionsList = minmaxDecision(gameState, 0, 0)
+        return actionsList[0]
+        
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
