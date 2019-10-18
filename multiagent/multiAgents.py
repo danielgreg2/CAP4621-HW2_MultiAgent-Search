@@ -413,8 +413,92 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           All ghosts should be modeled as choosing uniformly at random from their
           legal moves.
         """
+        #Pseudocode according to Berkely AI Lecture 7
+            #Note that my implementation differs b/c I check for terminal state within the MAX and EXP functions (much like above)
+        '''
+        def value(state):
+            if the state is a terminal state: return the state's utility
+            if the next agent is MAX: return max-value(state)
+            if the next agent is EXP: return exp-value(state)
+        def max-value(state):
+            initialize v = -infinity
+            for each successor of state:
+                v = max(v, value(successor))
+            return v
+        def exp-value(state):
+            initialize v = 0
+            for each successor of state:
+                p = probability(successor)
+                v += p * value(successor)
+            return v
+        '''
+        
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def expectiMax(state, depth, agentIndex):
+            #If we look one past the total # of agents, then it is time to restart the tree and look at pacman's action
+            #This means we will have to increase the depth as well
+            if agentIndex >= state.getNumAgents():
+                depth = depth + 1
+                agentIndex = 0
+            
+            #If we are looking at pacman
+            if agentIndex == 0:
+                return maxValue(state, depth, agentIndex)
+            #If we are looking at any of the ghosts
+            else:
+                return expValue(state, depth, agentIndex)
+                
+        def maxValue(state, depth, agentIndex):
+            moves = state.getLegalActions()
+            #First check terminal test, i.e. are there no moves to make OR we have reached the end depth
+            #If we are at the terminal test, we return just the utility value (which is just score) 
+            if len(moves) == 0 or depth == self.depth:
+                return self.evaluationFunction(state)
+                
+            #v will hold our [action, score]
+            v = ["", -float('inf')]
+            
+            #Then we go through all possible moves and find the max value it can give us
+            for m in moves:
+                result = expValue(state.generateSuccessor(0, m), depth, agentIndex + 1)
+                #check if result's utility value (i.e. score) is larger than current v (i.e. check for max among all moves)
+                if not isinstance(result, list):        #since we can be given [action, score] or just score, I check first which is being passed in
+                    competingScore = result
+                else:
+                    competingScore = result[1]
+                    
+                if competingScore > v[1]:
+                    v[0] = m
+                    v[1] = competingScore
+            return v
+            
+        def expValue(state, depth, agentIndex):
+            moves = state.getLegalActions(agentIndex)
+            #First check terminal test, i.e. are there no moves to make OR we have reached the end depth
+            #If we are at the terminal test, we return just the utility value (which is just score) 
+            if len(moves) == 0 or depth == self.depth:
+                return self.evaluationFunction(state)
+                
+            #v will hold our [action, score]
+            v = ["", 0.0]
+            #Here I randomly select one of the ghost's legal moves and predict that the ghost will choose this random move
+            v[0] = random.choice(moves)
+            #p will hold the probabilty a move is chosen, which is just 1/(# of moves) since each move has the same probabilty of being chosen
+            p = 1.0 / float(len(moves))
+            
+            #Then we go through all possible moves and compute the expected score (which is prob(move) * score(move), summed over all moves)
+            for m in moves:
+                #note that I call expectiMax instead of maxValue b/c I may have to iterate through multiple ghosts
+                result = expectiMax(state.generateSuccessor(agentIndex, m), depth, agentIndex + 1)
+                if not isinstance(result, list):        #since we can be given [action, score] or just score, I check first which is being passed in
+                    value = float(result)
+                else:
+                    value = float(result[1])
+                #Adding expected value for one particular move to total expected value
+                v[1] = v[1] + (p * value)
+            return v
+        
+        return expectiMax(gameState, 0, 0)[0]
 
 def betterEvaluationFunction(currentGameState):
     """
